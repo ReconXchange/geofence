@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  EMPLOYEE
+  MANAGER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String
+  password  String
+  role      UserRole   @default(EMPLOYEE)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  shifts            Shift[]
+  scheduleTemplates ScheduleTemplate[]
+  auditLogs         AuditLog[]
+
+  @@index([email])
+  @@index([status])
+}
+
+model Shift {
+  id             String      @id @default(cuid())
+  userId         String
+  scheduledStart DateTime?
+  scheduledEnd   DateTime?
+  actualStart    DateTime?
+  actualEnd      DateTime?
+  status         ShiftStatus @default(SCHEDULED)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationPings LocationPing[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([actualStart])
+  @@index([actualEnd])
+}
+
+model LocationPing {
+  id        String   @id @default(cuid())
+  shiftId   String
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  timestamp DateTime @default(now())
+
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@index([shiftId])
+  @@index([timestamp])
+}
+
+model ScheduleTemplate {
+  id            String    @id @default(cuid())
+  userId        String
+  dayOfWeek     Int // 0 = Sunday, 6 = Saturday
+  startTime     String // Format: "HH:MM"
+  endTime       String // Format: "HH:MM"
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([dayOfWeek])
+  @@index([effectiveFrom])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
+}

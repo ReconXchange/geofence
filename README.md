@@ -1,125 +1,173 @@
-# TrackShift – Mobile-First Employee Time & Location Tracking (PWA)
+# TrackShift
 
-TrackShift is a **mobile-first Progressive Web App (PWA)** that helps companies:
+A production-ready, mobile-first Progressive Web App (PWA) for employee time tracking and schedule management.
 
-- Manage employee schedules  
-- Let employees clock in / clock out from their phones  
-- Track employee location **only while they’re clocked in**  
-- Review attendance, lateness, and route history via an admin dashboard  
-
-The app is designed to work great on phones (home-screen installable, offline-friendly) but also scales up nicely on tablets and desktops.
-
----
-
-## Core Features
+## Features
 
 ### For Employees
-- **Secure login** (email + password or SSO-ready)
-- **View today’s schedule** (shift start/end time, location, role)
-- **Clock in / clock out** with:
-  - Timestamp  
-  - Geo-location (GPS) captured at clock-in / clock-out
-- **Break tracking** (start / end break)
-- **Shift summary** view:
-  - Total hours worked today / week
-  - Locations visited during the shift (if tracking is enabled)
-- **PWA support**
-  - Add to Home Screen
-  - Offline fallback screens and queued sync when back online
+- 📱 Mobile-first, responsive interface
+- ⏰ Clock in/out from any device
+- 📍 Automatic location tracking (only while clocked in)
+- 📅 View today's schedule and shift history
+- ⏸️ Start and end breaks
+- 📊 See hours worked (daily, weekly)
 
-### For Managers / Admins
-- **Dashboard overview**
-  - Who is currently clocked in and where
-  - Late / missed clock-ins
-  - Upcoming shifts
-- **Schedule management**
-  - Create recurring schedules (weekly, bi-weekly)
-  - Assign shifts by employee, role, or location
-- **Location tracking (while clocked in)**
-  - Background location pings at configurable intervals
-  - Map view of today’s active employees
-- **Attendance & compliance reports**
-  - Exportable CSV/Excel of hours, overtime, and locations
-- **Role-based access control**
-  - Admin, Manager, Employee
+### For Managers/Admins
+- 👥 Manage employee schedules
+- 🗺️ View active employees and their locations
+- 📈 Track attendance and generate reports
+- 📋 Create recurring schedule templates
+- 📥 Export data (CSV/JSON)
+- 🔍 Basic audit trail of changes
 
-### Privacy & Compliance (Conceptual)
-- Location is collected **only while an employee is clocked in**  
-- Clear in-app disclosure about what is tracked and why  
-- Data retention policies configurable at the server level  
-
----
+### Privacy & Compliance
+- Location data collected ONLY between clock-in and clock-out
+- Clear distinction between scheduled and actual worked hours
+- Audit log for accountability
+- Secure authentication with JWT
 
 ## Tech Stack
 
-### Frontend (PWA)
-- **Framework:** [Next.js](https://nextjs.org/) (App Router, React 18)
-- **Language:** TypeScript
-- **UI Styling:** Tailwind CSS
-- **State Management:** React Query (TanStack Query) + React Context for auth
-- **PWA Features:**
-  - Service Worker (Next.js custom service worker)
-  - Web App Manifest (icons, name, theme color)
-  - Background sync for offline clock-ins
-- **Maps & Location:**
-  - HTML5 Geolocation API
-  - Optional: Map provider (e.g. Mapbox / Google Maps JS SDK)
+- **Frontend**: Next.js 15 (App Router), React 18, TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: TanStack Query (React Query)
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT-based auth
+- **PWA**: Custom service worker + manifest
+- **Geolocation**: HTML5 Geolocation API
 
-### Backend / API
-- **Runtime:** Node.js (LTS)
-- **Framework:** Express.js or Next.js Route Handlers (REST API)
-- **Database:** PostgreSQL
-- **ORM:** Prisma
-- **Caching / Queues (Optional):** Redis (for live dashboard, background jobs)
-- **Authentication:** JWT-based auth or NextAuth.js (if using OAuth/SSO)
-- **Background Jobs:**
-  - BullMQ / node-cron for scheduled tasks (e.g. auto-closing stale shifts)
+## Prerequisites
 
-### DevOps / Infra
-- **Hosting (Example):**
-  - Frontend: Vercel / Netlify  
-  - Backend: Render / Railway / AWS ECS / Fly.io  
-  - Database: Managed PostgreSQL (Supabase, RDS, Neon, etc.)
-- **CI/CD:** GitHub Actions for linting, testing, and deployments
-- **Env Management:** dotenv, plus environment-specific configs
+- Node.js 18+ 
+- pnpm (recommended) or npm
+- PostgreSQL database
 
----
+## Getting Started
 
-## High-Level Architecture
-
-1. **Mobile PWA client (Next.js)**  
-   - Handles UI, local state, and PWA capabilities.  
-   - Communicates with backend via REST (JSON) or GraphQL.
-
-2. **API layer (Node.js / Express or Next.js routes)**  
-   - Endpoints for:
-     - Auth: `/api/auth/login`, `/api/auth/refresh`
-     - Time tracking: `/api/shifts`, `/api/clock-in`, `/api/clock-out`
-     - Schedules: `/api/schedules`
-     - Location updates: `/api/locations`
-     - Reports: `/api/reports`
-
-3. **Database (PostgreSQL via Prisma)**  
-   Suggested core tables:
-   - `User` (id, name, email, role, status)
-   - `Shift` (id, userId, scheduledStart, scheduledEnd, actualStart, actualEnd, status)
-   - `LocationPing` (id, shiftId, lat, lng, timestamp)
-   - `ScheduleTemplate` (for recurring schedules)
-   - `AuditLog` (optional for compliance)
-
----
-
-## Getting Started (Local Development)
-
-### Prerequisites
-
-- Node.js (LTS, e.g. 20+)
-- pnpm / npm / yarn
-- PostgreSQL running locally (or remote URL)
-- Git
-
-### 1. Clone the Repository
+### 1. Clone and Install
 
 ```bash
-git clone https://github.com/your-org/trackshift.git
-cd trackshift
+# Install dependencies
+pnpm install
+
+# Copy environment variables
+cp .env.example .env
+```
+
+### 2. Configure Environment
+
+Edit `.env` with your settings:
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/trackshift"
+JWT_SECRET="your-super-secret-jwt-key"
+```
+
+### 3. Set Up Database
+
+```bash
+# Run migrations
+pnpm prisma:migrate
+
+# Seed sample data (optional)
+pnpm prisma:seed
+
+# Open Prisma Studio to view data
+pnpm prisma:studio
+```
+
+### 4. Run Development Server
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 5. Sample Users (after seeding)
+
+- **Admin**: admin@trackshift.com / admin123
+- **Employee**: employee@trackshift.com / employee123
+
+## Available Scripts
+
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm lint` - Run ESLint
+- `pnpm test` - Run tests
+- `pnpm prisma:migrate` - Run database migrations
+- `pnpm prisma:studio` - Open Prisma Studio
+- `pnpm prisma:seed` - Seed database with sample data
+
+## Project Structure
+
+```
+/workspace/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   │   ├── auth/         # Authentication endpoints
+│   │   ├── shifts/       # Shift management
+│   │   ├── location-pings/ # Location tracking
+│   │   └── reports/      # Reports & exports
+│   ├── auth/             # Auth pages (login, register)
+│   ├── dashboard/        # Main app dashboards
+│   │   ├── employee/    # Employee views
+│   │   └── admin/       # Admin/manager views
+│   ├── layout.tsx        # Root layout
+│   └── page.tsx          # Landing page
+├── components/            # Reusable React components
+├── lib/                   # Utility functions
+│   ├── auth/             # Auth helpers
+│   ├── api-client/       # API client utilities
+│   └── pwa/              # PWA utilities
+├── prisma/               # Database schema & migrations
+│   ├── schema.prisma     # Prisma schema
+│   └── seed.ts           # Seed script
+└── public/               # Static assets
+    └── manifest.webmanifest  # PWA manifest
+```
+
+## PWA Installation
+
+TrackShift can be installed as a Progressive Web App:
+
+1. Open the app in a supported browser (Chrome, Safari, Edge)
+2. Look for the "Install" prompt in the address bar
+3. Click "Install" to add TrackShift to your home screen
+
+The app will work offline and provide a native app-like experience.
+
+## Development Guidelines
+
+- **Mobile-First**: All UI components are designed for mobile first
+- **Type Safety**: Strict TypeScript everywhere
+- **Privacy**: Location tracking only during active shifts
+- **Security**: HTTP-only cookies, password hashing, JWT tokens
+
+## API Documentation
+
+### Authentication
+- `POST /api/auth/register` - Create new account
+- `POST /api/auth/login` - Sign in
+- `GET /api/auth/me` - Get current user
+
+### Shifts
+- `GET /api/shifts` - List shifts
+- `POST /api/shifts/clock-in` - Clock in
+- `POST /api/shifts/clock-out` - Clock out
+- `GET /api/shifts/current` - Get active shift
+
+### Location
+- `POST /api/location-pings` - Submit location ping
+
+### Reports (Admin)
+- `GET /api/reports/attendance` - Get attendance report
+
+## License
+
+MIT
+
+## Support
+
+For issues and questions, please open a GitHub issue.
