@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  EMPLOYEE
+  MANAGER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  passwordHash String  @map("password_hash")
+  role      UserRole   @default(EMPLOYEE)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  shifts           Shift[]
+  scheduleTemplates ScheduleTemplate[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+  @@index([email])
+  @@index([status])
+}
+
+model Shift {
+  id             String      @id @default(cuid())
+  userId         String      @map("user_id")
+  scheduledStart DateTime?   @map("scheduled_start")
+  scheduledEnd   DateTime?   @map("scheduled_end")
+  actualStart    DateTime?   @map("actual_start")
+  actualEnd      DateTime?   @map("actual_end")
+  status         ShiftStatus @default(SCHEDULED)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationPings LocationPing[]
+
+  @@map("shifts")
+  @@index([userId])
+  @@index([status])
+  @@index([userId, status])
+  @@index([actualStart])
+}
+
+model LocationPing {
+  id        String   @id @default(cuid())
+  shiftId   String   @map("shift_id")
+  latitude  Float
+  longitude Float
+  timestamp DateTime @default(now())
+
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@map("location_pings")
+  @@index([shiftId])
+  @@index([timestamp])
+  @@index([shiftId, timestamp])
+}
+
+model ScheduleTemplate {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  dayOfWeek    Int      @map("day_of_week") // 0 = Sunday, 1 = Monday, etc.
+  startTime    String   @map("start_time") // HH:MM format
+  endTime      String   @map("end_time") // HH:MM format
+  effectiveFrom DateTime @map("effective_from")
+  effectiveTo   DateTime? @map("effective_to")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("schedule_templates")
+  @@index([userId])
+  @@index([dayOfWeek])
+  @@index([effectiveFrom, effectiveTo])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?  @map("user_id") // Nullable for system actions
+  action     String   // e.g., "CREATE_SHIFT", "UPDATE_SHIFT", "CLOCK_IN", etc.
+  entityType String   @map("entity_type") // e.g., "SHIFT", "USER", "SCHEDULE"
+  entityId   String?  @map("entity_id") // Nullable for some actions
+  metadata   Json?    // Additional context
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
